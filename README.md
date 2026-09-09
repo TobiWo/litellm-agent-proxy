@@ -18,7 +18,7 @@ The original upstream work remains under the [MIT License](LICENSE). All modific
 * A virtual environment is recommended (conda, venv, etc.)
 * Docker with the `docker compose` plugin (recommended; native fallback available)
 * [Claude Code](https://docs.claude.com/en/docs/claude-code/setup) installed
-* jq (only necessary if you want to fetch your own available models, see ["Note on available models"](#note-on-available-models-in-litellm_configyaml))
+* jq (required by the model catalog and context-window helpers below)
 
 ## Setup
 
@@ -63,6 +63,26 @@ It is recommended to always pass `--model` since the model picker in Claude Code
 
 ```bash
 claude --model <model_name>
+```
+
+### Override the context window
+
+Set a global context-window override when Claude Code does not recognize your model's limit:
+
+```bash
+./scripts/set_max_context.sh 272000
+./scripts/set_max_context.sh delete
+./scripts/set_max_context.sh --help
+```
+
+The helper requires jq and changes only `env.CLAUDE_CODE_MAX_CONTEXT_TOKENS` in `~/.claude/settings.json`. Use a positive integer token count without suffixes or leading zeros. It preserves unrelated settings, rejects malformed JSON and symlink settings files, and writes atomically with owner-only permissions.
+
+For a shorter command, define this alias (replace the path with your checkout's absolute path):
+
+```bash
+alias ccmax='"/absolute/path/to/litellm-claude-code-proxy-tobiwo/scripts/set_max_context.sh"'
+ccmax 272000
+ccmax delete
 ```
 
 ### Note on available models in litellm_config.yaml
