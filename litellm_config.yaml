@@ -2,8 +2,109 @@ litellm_settings:
   master_key: "os.environ/LITELLM_MASTER_KEY"
   ssl_verify: false
   additional_drop_params: ["response_format"]
+  # Claude Code resends a large system prompt on every request; scanning it
+  # each time is wasted latency.
+  skip_system_message_in_guardrail: true
 general_settings:
   allow_requests_on_db_unavailable: true
+guardrails:
+  - guardrail_name: "presidio-pii"
+    litellm_params:
+      guardrail: presidio
+      mode: "pre_call"
+      # Mandatory: Claude Code speaks plain Anthropic Messages and cannot send
+      # a per-request `guardrails: [...]` array, so without this the guard
+      # loads but never runs.
+      default_on: true
+      pii_entities_config:
+        CREDIT_CARD: "MASK"
+        IBAN_CODE: "MASK"
+        EMAIL_ADDRESS: "MASK"
+        PHONE_NUMBER: "MASK"
+        IP_ADDRESS: "MASK"
+        US_SSN: "MASK"
+      presidio_score_thresholds:
+        ALL: 0.6
+  - guardrail_name: "secret-filter"
+    litellm_params:
+      guardrail: litellm_content_filter
+      mode: "pre_call"
+      default_on: true
+      pattern_redaction_format: "[{pattern_name}_REDACTED]"
+      patterns:
+        # --- AWS ---
+        - pattern_type: "regex"
+          name: "aws_key"
+          pattern: '\b(?:AKIA|ASIA|ABIA|ACCA)[A-Z2-7]{16}\b'
+          action: "MASK"
+        - pattern_type: "regex"
+          name: "aws_secret"
+          pattern: '(?i)aws_?secret_?access_?key["'']?\s*[:=]\s*["'']?[A-Za-z0-9/+=]{40}'
+          action: "MASK"
+        # --- GitHub ---
+        - pattern_type: "regex"
+          name: "gh_token"
+          # Classic PAT/OAuth/app/refresh: prefix + exactly 36 chars.
+          pattern: '\bgh[pousr]_[A-Za-z0-9]{36}\b'
+          action: "MASK"
+        - pattern_type: "regex"
+          name: "gh_finegrained_pat"
+          # Fine-grained PAT: github_pat_ + 22 + "_" + 59 (\w covers the separator).
+          pattern: '\bgithub_pat_\w{82}\b'
+          action: "MASK"
+        # --- GitLab ---
+        - pattern_type: "regex"
+          name: "gitlab_token"
+          # All current gl*- prefixes. Note the glpat- prefix is configurable on
+          # self-managed instances, so a custom-prefixed PAT will not match.
+          pattern: '\bgl(?:pat|oas|dt|rtr|rt|cbt|ptt|ft|imt|agent|wt|soat|ffct)-[A-Za-z0-9_-]{20,64}\b'
+          action: "MASK"
+        - pattern_type: "regex"
+          name: "gitlab_routable_token"
+          # Newer routable format: <prefix><base64>.<len><crc32>, both versioned
+          # and unversioned. Longer payload than the legacy fixed-length tokens.
+          pattern: '\bgl[a-z]{2,7}-[A-Za-z0-9_-]{27,300}\.(?:[a-z0-9]{2}\.)?[a-z0-9]{2}[a-z0-9]{7}\b'
+          action: "MASK"
+        - pattern_type: "regex"
+          name: "gitlab_runner_registration"
+          pattern: '\bGR1348941[A-Za-z0-9_-]{20}\b'
+          action: "MASK"
+        # --- Azure ---
+        - pattern_type: "regex"
+          name: "azure_client_secret"
+          # Empirical format: 3 chars, a digit, then a literal "Q~". Microsoft has
+          # never published this as a spec — gitleaks' own source hedges on it — so
+          # a non-match does not prove a string is not a secret. Legacy Azure AD
+          # secrets have no marker at all and are undetectable.
+          pattern: '\b[A-Za-z0-9_~.]{3}\dQ~[A-Za-z0-9_~.-]{31,34}\b'
+          action: "MASK"
+        - pattern_type: "regex"
+          name: "azure_storage_key"
+          # Anchored on AccountKey=/SharedAccessKey= — a bare 86-char base64 blob is
+          # not usable as a pattern (it matches any base64 content).
+          pattern: '(?i)(?:Account|SharedAccess)Key\s*=\s*[A-Za-z0-9+/]{86}=='
+          action: "MASK"
+        # --- Google Cloud ---
+        - pattern_type: "regex"
+          name: "gcp_api_key"
+          pattern: '\bAIza[A-Za-z0-9_-]{35}\b'
+          action: "MASK"
+        - pattern_type: "regex"
+          name: "gcp_oauth_secret"
+          # Replaced the older unprefixed 24-char secret, which is undetectable.
+          pattern: '\bGOCSPX-[A-Za-z0-9_-]{28}\b'
+          action: "MASK"
+        # --- Generic ---
+        - pattern_type: "regex"
+          name: "private_key"
+          # (?s) is required: DOTALL, so `.` spans the newlines inside the key body.
+          # Also catches GCP service-account JSON, whose secret is this PEM block.
+          pattern: '(?s)-----BEGIN [A-Z ]*PRIVATE KEY-----.*?-----END [A-Z ]*PRIVATE KEY-----'
+          action: "MASK"
+        - pattern_type: "regex"
+          name: "slack_token"
+          pattern: '\bxox[bpoas]-[A-Za-z0-9-]{10,}\b'
+          action: "MASK"
 model_list:
   - model_name: claude-opus-5
     litellm_params:
