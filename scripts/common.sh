@@ -14,7 +14,6 @@ CLAUDE_SETTINGS_DIR="$HOME/.claude"
 CLAUDE_SETTINGS_FILE="$CLAUDE_SETTINGS_DIR/settings.json"
 AUTH_SCRIPT="$PROJECT_DIR/scripts/authenticate.sh"
 NATIVE_START_SCRIPT="$PROJECT_DIR/scripts/start_proxy.sh"
-DEFAULT_LITELLM_PORT=4000
 
 PYTHON_BIN="${PYTHON_BIN:-}"
 PYTHON_VERSION_STRING=""
@@ -40,7 +39,11 @@ load_env() {
                         continue
                         ;;
                 esac
-                export "$key=$value"
+                # An explicitly exported value wins over .env, matching how
+                # docker compose already resolves these same variables.
+                if [ -z "${!key+x}" ]; then
+                    export "$key=$value"
+                fi
                 ;;
         esac
     done < "$ENV_FILE"
@@ -124,11 +127,11 @@ check_docker_compose() {
 
 validate_proxy_env() {
     if [ -z "${LITELLM_PORT:-}" ]; then
-        CHECK_MESSAGE="LITELLM_PORT is not set in .env"
+        CHECK_MESSAGE="LITELLM_PORT is empty or unset (checked the environment, then $ENV_FILE)"
         return 1
     fi
     case "$LITELLM_PORT" in
-        ''|*[!0-9]*)
+        *[!0-9]*)
             CHECK_MESSAGE="LITELLM_PORT='$LITELLM_PORT' is not a valid port number"
             return 1
             ;;
@@ -138,7 +141,7 @@ validate_proxy_env() {
         return 1
     fi
     if [ -z "${LITELLM_MASTER_KEY:-}" ]; then
-        CHECK_MESSAGE="LITELLM_MASTER_KEY is not set in .env"
+        CHECK_MESSAGE="LITELLM_MASTER_KEY is empty or unset (checked the environment, then $ENV_FILE)"
         return 1
     fi
     CHECK_MESSAGE=""
@@ -146,11 +149,15 @@ validate_proxy_env() {
 }
 
 run_litellm() {
+    # Pinned to 1.94.0, not the compose.yml tag (1.95.0): 1.95.0 imports
+    # get_flat_dependant from fastapi.dependencies.utils, which FastAPI removed
+    # in 0.140.9+, so a fresh native resolve fails at startup. The Docker image
+    # is unaffected because its dependencies are frozen at build time.
     exec env UV_NATIVE_TLS=true PYTHONNOUSERSITE=1 uv run \
         --isolated \
         --no-project \
         --python "$PYTHON_BIN" \
-        --with "litellm[proxy]" \
+        --with "litellm[proxy]==1.94.0" \
         --with "aiodns>=4.0.4" \
         --with "pycares>=5.0.1" \
         --with "prisma" \

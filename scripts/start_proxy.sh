@@ -56,5 +56,19 @@ if [ ! -f "$COPILOT_TOKEN_FILE" ]; then
 fi
 
 printf 'Starting native LiteLLM proxy on port %s …\n' "$LITELLM_PORT"
-printf '%s\n\n' "This fallback starts LiteLLM only; PostgreSQL and other Compose services are not included."
+printf '%s\n' "This fallback starts LiteLLM only; PostgreSQL and other Compose services are not included."
+printf '\n%s\n' "WARNING: the PII guardrail requires the Docker Compose stack."
+printf '%s\n' "  PRESIDIO_ANALYZER_API_BASE / PRESIDIO_ANONYMIZER_API_BASE point at Compose"
+printf '%s\n' "  service DNS names that do not resolve here, and litellm_config.yaml sets"
+printf '%s\n' "  default_on: true — so every request will fail until you either set"
+printf '%s\n\n' "  default_on: false in litellm_config.yaml or make Presidio reachable on localhost."
+
+# The subshell discards fd 3 on exit, so there is nothing to close here.
+if (exec 3<>/dev/tcp/127.0.0.1/"$LITELLM_PORT") 2>/dev/null; then
+    printf 'WARNING: port %s is already in use.\n' "$LITELLM_PORT" >&2
+    printf '%s\n' "  LiteLLM binds a random port instead of failing when the port is 4000," >&2
+    printf '%s\n' "  so it may appear to start while being unreachable. Claude Code is" >&2
+    printf '%s\n\n' "  configured for $LITELLM_PORT and will not connect. Run 'docker compose down' first." >&2
+fi
+
 run_litellm

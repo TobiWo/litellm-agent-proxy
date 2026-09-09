@@ -5,8 +5,10 @@ services:
     command:
       - "--config"
       - "/app/config.yaml"
+      # Fixed internal port, like db's 5432. LITELLM_PORT governs only the
+      # host side of the mapping below.
       - "--port"
-      - "${LITELLM_PORT:-4000}"
+      - "4000"
     ports:
       - "${LITELLM_PORT:-4000}:4000"
     env_file:
@@ -19,6 +21,36 @@ services:
     depends_on:
       db:
         condition: "service_healthy"
+      presidio-analyzer:
+        condition: "service_healthy"
+      presidio-anonymizer:
+        condition: "service_healthy"
+    restart: "unless-stopped"
+    networks:
+      - "litellm-cc-proxy"
+
+  presidio-analyzer:
+    container_name: "litellm-claude-code-proxy-presidio-analyzer"
+    image: "mcr.microsoft.com/presidio-analyzer:2.2.362"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:3000/health || exit 1"]
+      interval: "10s"
+      timeout: "5s"
+      retries: 12
+      start_period: "60s"
+    restart: "unless-stopped"
+    networks:
+      - "litellm-cc-proxy"
+
+  presidio-anonymizer:
+    container_name: "litellm-claude-code-proxy-presidio-anonymizer"
+    image: "mcr.microsoft.com/presidio-anonymizer:2.2.362"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:3000/health || exit 1"]
+      interval: "10s"
+      timeout: "5s"
+      retries: 12
+      start_period: "20s"
     restart: "unless-stopped"
     networks:
       - "litellm-cc-proxy"
