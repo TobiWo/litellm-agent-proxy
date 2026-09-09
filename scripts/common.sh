@@ -157,7 +157,7 @@ run_litellm() {
         --isolated \
         --no-project \
         --python "$PYTHON_BIN" \
-        --with "litellm[proxy]==1.94.0" \
+        --with "litellm[proxy]==1.99.0" \
         --with "aiodns>=4.0.4" \
         --with "pycares>=5.0.1" \
         --with "prisma" \

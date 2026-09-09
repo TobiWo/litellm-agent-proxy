@@ -1,7 +1,7 @@
 services:
   litellm:
     container_name: "litellm-claude-code-proxy"
-    image: "ghcr.io/berriai/litellm:v1.95.0"
+    image: "ghcr.io/berriai/litellm:v1.99.0"
     command:
       - "--config"
       - "/app/config.yaml"
