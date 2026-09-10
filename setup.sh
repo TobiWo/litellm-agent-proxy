@@ -476,7 +476,7 @@ if [ -f "$LITELLM_CONFIG_FILE" ]; then
 	while IFS= read -r model_name; do
 		printf '  - %s\n' "$model_name"
 	done <<EOF
-$(grep -E '^[[:space:]]*-[[:space:]]*model_name:' "$LITELLM_CONFIG_FILE" | sed -E 's/^[[:space:]]*-[[:space:]]*model_name:[[:space:]]*//; s/\*+$//')
+$(grep -E '^[[:space:]]*-[[:space:]]*model_name:' "$LITELLM_CONFIG_FILE" | sed -E 's/^[[:space:]]*-[[:space:]]*model_name:[[:space:]]*//; s/^["'"'"']//; s/["'"'"']$//; s/\*+$//')
 EOF
 	if [ "$SETUP_CODEX" -eq 1 ]; then
 		printf '\n'

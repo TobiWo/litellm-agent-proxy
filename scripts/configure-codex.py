@@ -149,6 +149,9 @@ def responses_models(litellm_config: str) -> dict[str, str]:
     entry is kept when it carries both ``mode: responses`` and a
     ``model: github_copilot/<slug>`` line before the next entry begins.
 
+    Values may be quoted or bare — yamllint pushes toward quoting, so both
+    spellings must parse identically.
+
     The upstream slug matters because it is not derivable from the alias:
     ``gpt-6`` maps to ``gpt-6-astra``.
     """
@@ -164,21 +167,23 @@ def responses_models(litellm_config: str) -> dict[str, str]:
     try:
         with open(litellm_config, "r", encoding="utf-8") as handle:
             for line in handle:
-                name = re.match(r"^\s*-\s*model_name:\s*(\S+)", line)
+                name = re.match(r"^\s*-\s*model_name:\s*[\"']?([^\"'\s]+)", line)
                 if name:
                     flush()
-                    alias = name.group(1).strip().strip("\"'")
+                    alias = name.group(1)
                     is_responses = False
                     slug = None
                     continue
                 if alias is None:
                     continue
-                if re.match(r"^\s*mode:\s*responses\s*$", line):
+                if re.match(r"^\s*mode:\s*[\"']?responses[\"']?\s*$", line):
                     is_responses = True
                     continue
-                upstream = re.match(r"^\s*model:\s*github_copilot/(\S+)", line)
+                upstream = re.match(
+                    r"^\s*model:\s*[\"']?github_copilot/([^\"'\s]+)", line
+                )
                 if upstream:
-                    slug = upstream.group(1).strip().strip("\"'")
+                    slug = upstream.group(1)
     except OSError as exc:
         raise ConfigError(f"cannot read {litellm_config}: {exc}") from exc
 
