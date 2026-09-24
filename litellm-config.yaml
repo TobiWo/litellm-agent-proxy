@@ -107,12 +107,9 @@ guardrails:
           pattern: '\bxox[bpoas]-[A-Za-z0-9-]{10,}\b'
           action: "MASK"
 model_list:
-  - model_name: "claude-fable-5-1"
+  - model_name: "claude-opus-5-5"
     litellm_params:
-      model: "github_copilot/claude-fable-5.1"
-  - model_name: "claude-opus-5"
-    litellm_params:
-      model: "github_copilot/claude-opus-5"
+      model: "github_copilot/claude-opus-5.5"
   - model_name: "claude-sonnet-5"
     litellm_params:
       model: "github_copilot/claude-sonnet-5"
@@ -121,21 +118,26 @@ model_list:
       mode: "responses"
     litellm_params:
       model: "github_copilot/gpt-5.6-luna"
-  - model_name: "gpt-5-6-sol"
-    model_info:
-      mode: "responses"
-    litellm_params:
-      model: "github_copilot/gpt-5.6-sol"
   - model_name: "gpt-5-6-terra"
     model_info:
       mode: "responses"
     litellm_params:
       model: "github_copilot/gpt-5.6-terra"
-  - model_name: "gpt-6"
+  - model_name: "gpt-6-astra"
     model_info:
       mode: "responses"
     litellm_params:
       model: "github_copilot/gpt-6-astra"
+  - model_name: "gpt-6-sol"
+    model_info:
+      mode: "responses"
+    litellm_params:
+      model: "github_copilot/gpt-6-sol"
+  - model_name: "gpt-6-luna"
+    model_info:
+      mode: "responses"
+    litellm_params:
+      model: "github_copilot/gpt-6-luna"
   - model_name: "kimi-k3"
     litellm_params:
       model: "github_copilot/kimi-k3"
