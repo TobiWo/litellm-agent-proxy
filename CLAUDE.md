@@ -41,21 +41,16 @@ exist: an entry is emitted only when the model is both a `mode: responses` alias
 `max_context_window_tokens` (which includes output headroom). Do not "fix" that to the
 larger number. A model Codex stops bundling is dropped and reported, by design.
 
-`STRIPPED_FIELDS` also drops `tool_mode`. Codex's bundled catalog tags gpt-5.6-*/gpt-6
-models `tool_mode: "code_mode_only"`, which force-selects Codex's JS "code mode" `exec`
-tool — a Responses API `custom`-type tool. GitHub Copilot's `/responses` backend doesn't
-implement `custom` tools correctly: it replies with a plain `function_call` instead of
-`custom_tool_call`, and Codex's own tool router then rejects every call as an
-"incompatible payload", so no command ever runs. This is a GitHub Copilot API bug, not a
-LiteLLM one — LiteLLM's `github_copilot` Responses provider is a spec-compliant
-passthrough and has no custom-tool bridging on that path (unlike the separate
-chat-completions-bridge path, which does). Dropping `tool_mode` from the vendored catalog
-lets Codex fall back to `[features.code_mode]` / the model's `shell_type`
-(`unified_exec`), restoring the working `shell`/`local_shell` tool. Do not restore this
-field, and don't "fix" it by changing `shell_type` instead — that alone doesn't help,
-`tool_mode` is what pins `code_mode_only`.
-
 ## Guardrails (`litellm-config.yaml`)
+
+`hooks/responses_tools.py` is load-bearing for Codex. LiteLLM's guardrail layer
+round-trips `/responses` tools through chat-completions format and writes the result
+back, which flattens `namespace` tools (MCP) and turns `custom` tools (`apply_patch`,
+code-mode `exec`) into `function`. GitHub Copilot handles both natively; the damage is
+LiteLLM's. The hook snapshots tools in `async_pre_call_hook` and restores them in
+`async_pre_call_deployment_hook`. Do not remove it while guardrails are `default_on`, and
+do not reintroduce the old workarounds (stripping `tool_mode` from the catalog,
+disabling `[features.code_mode]`) — they only masked this.
 
 `litellm-config.yaml` is yamllint-clean, so its values are double-quoted. Anything that
 parses it textually — `configure-codex.py:responses_models()`, the model-list `sed` in

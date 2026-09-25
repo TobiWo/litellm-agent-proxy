@@ -324,8 +324,6 @@ if [ "$SETUP_CODEX" -eq 1 ]; then
 
 	detail "Codex reaches the proxy through an OpenAI-compatible provider entry."
 	detail "Only Responses-API models are usable (GPT models)."
-	detail "Code mode (the JS exec tool) is disabled: GitHub Copilot's /responses"
-	detail "backend does not answer it correctly, which aborts every command."
 	printf '\n'
 
 	if [ ! -f "$CONFIGURE_CODEX_SCRIPT" ]; then
