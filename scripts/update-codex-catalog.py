@@ -36,11 +36,6 @@ STRIPPED_FIELDS = frozenset(
         "service_tiers",
         "supports_search_tool",
         "use_responses_lite",
-        # Forces Codex's JS "code mode" exec tool, which GitHub Copilot's
-        # /responses backend answers with a plain function_call instead of
-        # the expected custom_tool_call, aborting every command. Dropping it
-        # lets Codex fall back to the standard shell/local_shell tool.
-        "tool_mode",
     }
 )
 
