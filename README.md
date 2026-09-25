@@ -114,14 +114,9 @@ You can use GPT models in Claude Code but these are Response-API models (see [Mo
 codex
 ```
 
-#### IMPORTANT
+#### Tool definitions and guardrails
 
-The following chapter is an important limitation. Although there is a separate chapter for `limitations` I put it here, since it is essential.
-
-GitHub Copilot's `/responses` API endpoint does not answer tool calls of type `custom` correctly. Why does it matter / what you need to do?
-
-1. `setup.sh` disables `[features.code_mode]` (Codex own JS `exec` tool) to avoid the generasl issue with custom tool calls. It will fall back to plain `shell` tools which might lead to issues on Windows.
-2. Codex will not be able to use it's own `apply_patch` file editing tool via a custom tool call. Hence it is recommended to add an explicit instruction to codex to invoke it as a plain shell command (e.g. `Note for editing/writing file content: Use the workspace apply_patch binary directly since there is an issue with the underlying LLM API provider endpoint for the apply_patch custom tool call.`). It will also work without this instruction but it is faster since Codex will not fail in the first place.
+LiteLLM's guardrails rewrite a `/responses` request's tools on the way through: MCP `namespace` tools get flattened into plain functions and `custom` tools (`apply_patch`, code mode `exec`) become `function` tools. Codex then rejects every MCP, `apply_patch` and `exec` call. `hooks/responses_tools.py` (loaded via `callbacks` in `litellm-config.yaml`) puts the original tool definitions back before the request goes to GitHub Copilot. Prompt text is still guardrailed. Keep the hook while the guardrails are `default_on`.
 
 #### Codex App
 
@@ -299,6 +294,8 @@ A row from the secret filter looks like:
 ### Claude Code limitations
 
 **Beta header rejections (`400`):** If Claude Code fails with `Unexpected value(s) for the anthropic-beta header` or `Extra inputs are not permitted`, set `CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS=1` in your shell and restart Claude Code.
+
+**Auto mode classifier:** Claude Code's [no-charge server-side auto mode checks](https://code.claude.com/docs/en/auto-mode-classifier-billing) require the Anthropic API; GitHub Copilot doesn't support them. Classifier requests are sent as regular requests and count against your Copilot quota. Setup sets `CLAUDE_CODE_AUTO_MODE_SERVER=0` so Claude Code doesn't stop to show the "session isn't eligible" notice.
 
 ### Codex limitations
 
