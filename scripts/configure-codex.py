@@ -31,14 +31,6 @@ DEFAULT_MODEL = "gpt-5-6-luna"
 DEFAULT_MODE = 0o600
 TEMP_PREFIX = ".config.toml."
 
-# Codex's bundled catalog tags gpt-5.6-*/gpt-6 models `tool_mode:
-# "code_mode_only"` (stripped by update-codex-catalog.py), which otherwise
-# force-selects the JS "code mode" `exec` tool. GitHub Copilot's /responses
-# backend doesn't implement that tool's `custom` type correctly, so every
-# command aborts. Disabling code_mode here restores the plain shell/local_shell
-# tool that Codex falls back to once tool_mode is absent.
-CODE_MODE_TABLE = "features.code_mode"
-
 MANAGED_ONLY_NOTICE = (
     "Only the keys below are managed; every other setting, comment, and "
     "section is left as-is."
@@ -67,10 +59,8 @@ def default_config_path() -> str:
     return os.path.join(codex_home, "config.toml")
 
 
-def render_value(value: str | bool) -> str:
-    """Render a TOML value: a basic string, or a bare boolean literal."""
-    if isinstance(value, bool):
-        return "true" if value else "false"
+def render_value(value: str) -> str:
+    """Render a TOML basic string."""
     escaped = value.replace("\\", "\\\\").replace('"', '\\"')
     return f'"{escaped}"'
 
@@ -106,7 +96,7 @@ def trailing_comment(line: str) -> str:
     return ""
 
 
-def assign(key: str, value: str | bool, previous: str = "") -> str:
+def assign(key: str, value: str, previous: str = "") -> str:
     """Render ``key = value``, carrying over any inline comment.
 
     Rewriting a line must not silently discard the comment a user wrote next
@@ -220,8 +210,8 @@ def resolve_model(current, aliases: list[str]) -> tuple[str, str | None]:
     )
 
 
-def desired_settings(base_url: str, catalog: str, model: str) -> tuple[dict, dict, dict]:
-    """Return the managed top-level scalars, provider-table, and code-mode-table keys."""
+def desired_settings(base_url: str, catalog: str, model: str) -> tuple[dict, dict]:
+    """Return the managed top-level scalars and provider-table keys."""
     scalars = {
         MODEL_KEY: model,
         PROVIDER_KEY: PROVIDER_NAME,
@@ -234,8 +224,7 @@ def desired_settings(base_url: str, catalog: str, model: str) -> tuple[dict, dic
         "env_key": API_KEY_VAR,
         "wire_api": "responses",
     }
-    code_mode = {"enabled": False}
-    return scalars, provider, code_mode
+    return scalars, provider
 
 
 def table_spans(lines: list[str]) -> tuple[int, dict[str, tuple[int, int]]]:
@@ -296,7 +285,7 @@ def edit_scalars(lines: list[str], scalars: dict[str, str], first_header: int) -
     return result[:insert_at] + additions + result[insert_at:]
 
 
-def edit_table(lines: list[str], table_name: str, values: dict[str, str | bool]) -> list[str]:
+def edit_table(lines: list[str], table_name: str, values: dict[str, str]) -> list[str]:
     """Replace a table's keys, or append the table when absent."""
     _, spans = table_spans(lines)
     span = spans.get(table_name)
@@ -331,7 +320,6 @@ def verify(
     content: str,
     scalars: dict[str, str],
     provider: dict[str, str],
-    code_mode: dict[str, bool],
 ) -> None:
     """Re-parse edited content and confirm every managed key landed.
 
@@ -363,18 +351,9 @@ def verify(
                 f"{table.get(key)!r}, expected {value!r}"
             )
 
-    table = parsed.get("features", {}).get("code_mode")
-    if not isinstance(table, dict):
-        raise ConfigError(f"post-edit check failed: [{CODE_MODE_TABLE}] is missing")
-    for key, value in code_mode.items():
-        if table.get(key) != value:
-            raise ConfigError(
-                f"post-edit check failed: {CODE_MODE_TABLE}.{key} is "
-                f"{table.get(key)!r}, expected {value!r}"
-            )
 
 
-def build(path: str, scalars: dict[str, str], provider: dict[str, str], code_mode: dict[str, bool]) -> str:
+def build(path: str, scalars: dict[str, str], provider: dict[str, str]) -> str:
     """Produce the updated file content."""
     if os.path.exists(path):
         try:
@@ -389,7 +368,6 @@ def build(path: str, scalars: dict[str, str], provider: dict[str, str], code_mod
     first_header, _ = table_spans(lines)
     lines = edit_scalars(lines, scalars, first_header)
     lines = edit_table(lines, PROVIDER_TABLE, provider)
-    lines = edit_table(lines, CODE_MODE_TABLE, code_mode)
     return "\n".join(lines) + "\n"
 
 
@@ -423,7 +401,6 @@ def report_divergence(
     existing: dict,
     scalars: dict[str, str],
     provider: dict[str, str],
-    code_mode: dict[str, bool],
 ) -> list[str]:
     """Describe managed keys whose values are about to change."""
     lines = []
@@ -443,12 +420,6 @@ def report_divergence(
         elif current != value:
             lines.append(f"{PROVIDER_TABLE}.{key}: {current!r} -> {value!r}")
 
-    table = existing.get("features", {})
-    table = table.get("code_mode", {}) if isinstance(table, dict) else {}
-    for key, value in code_mode.items():
-        current = table.get(key) if isinstance(table, dict) else None
-        if current is None:
-            lines.append(f"{CODE_MODE_TABLE}.{key}: (unset) -> {value!r}")
         elif current != value:
             lines.append(f"{CODE_MODE_TABLE}.{key}: {current!r} -> {value!r}")
     return lines
@@ -510,9 +481,9 @@ def main(argv: list[str] | None = None) -> int:
             )
 
         model, warning = resolve_model(existing.get(MODEL_KEY), aliases)
-        scalars, provider, code_mode = desired_settings(args.base_url, args.catalog, model)
+        scalars, provider = desired_settings(args.base_url, args.catalog, model)
 
-        changes = report_divergence(existing, scalars, provider, code_mode)
+        changes = report_divergence(existing, scalars, provider)
         if not changes:
             print(f"Codex is already configured in {path}")
             if warning:
@@ -524,8 +495,8 @@ def main(argv: list[str] | None = None) -> int:
             with open(path, "r", encoding="utf-8") as handle:
                 original = handle.read()
 
-        updated = build(path, scalars, provider, code_mode)
-        verify(updated, scalars, provider, code_mode)
+        updated = build(path, scalars, provider)
+        verify(updated, scalars, provider)
     except ConfigError as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 1
