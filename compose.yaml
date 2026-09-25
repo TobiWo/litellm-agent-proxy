@@ -16,6 +16,7 @@ services:
       DATABASE_URL: "postgresql://${POSTGRES_USER:-litellm}:${POSTGRES_PASSWORD:-litellm}@db:5432/${POSTGRES_DB:-litellm}"
     volumes:
       - "./litellm-config.yaml:/app/config.yaml:ro"
+      - "./hooks:/app/hooks:ro"
       - "${HOME}/.config/litellm/github_copilot:/root/.config/litellm/github_copilot"
     depends_on:
       db:
