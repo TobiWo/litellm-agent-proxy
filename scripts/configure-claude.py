@@ -28,6 +28,9 @@ MAX_CONTEXT_KEY = "CLAUDE_CODE_MAX_CONTEXT_TOKENS"
 PRIVACY_ENV = {
     "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
     "DISABLE_GROWTHBOOK": "1",
+    # Copilot can't run auto mode's server-side classifier checks; skip asking
+    # for them so Claude Code doesn't hold the first checked action on a notice.
+    "CLAUDE_CODE_AUTO_MODE_SERVER": "0",
 }
 
 SECRET_KEYS = frozenset({AUTH_TOKEN_KEY})
