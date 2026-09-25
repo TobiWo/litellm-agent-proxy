@@ -6,6 +6,9 @@ litellm_settings:
   # Claude Code resends a large system prompt on every request; scanning it
   # each time is wasted latency.
   skip_system_message_in_guardrail: true
+  # Keeps /responses tool definitions (namespace, custom) intact through the
+  # guardrails, which otherwise flatten them and break Codex MCP/apply_patch.
+  callbacks: ["hooks.responses_tools.handler"]
 general_settings:
   allow_requests_on_db_unavailable: true
 guardrails:
