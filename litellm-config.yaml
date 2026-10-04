@@ -8,7 +8,10 @@ litellm_settings:
   skip_system_message_in_guardrail: true
   # Keeps /responses tool definitions (namespace, custom) intact through the
   # guardrails, which otherwise flatten them and break Codex MCP/apply_patch.
-  callbacks: ["hooks.responses_tools.handler"]
+  callbacks:
+    - "hooks.responses_tools.handler"
+    - "hooks.mid_conversation_effort.handler"
+    - "hooks.thinking_off.handler"
 general_settings:
   allow_requests_on_db_unavailable: true
 guardrails:
@@ -111,9 +114,15 @@ guardrails:
           action: "MASK"
 model_list:
   - model_name: "claude-opus-5-5"
+    model_info:
+      supports_reasoning: true
+      supports_adaptive_thinking: true
     litellm_params:
       model: "github_copilot/claude-opus-5.5"
   - model_name: "claude-sonnet-5-5"
+    model_info:
+      supports_reasoning: true
+      supports_adaptive_thinking: true
     litellm_params:
       model: "github_copilot/claude-sonnet-5.5"
   - model_name: "gpt-6-astra"
@@ -131,4 +140,13 @@ model_list:
       mode: "responses"
     litellm_params:
       model: "github_copilot/gpt-6-luna"
+  # Not for direct use: Claude Code requests these internally (claude-sonnet-5
+  # is the auto mode classifier, Haiku the default for small/subagent calls).
+  # Copilot serves neither, so both map to Sonnet 5.5.
+  - model_name: "claude-haiku-4-5-20251001"
+    litellm_params:
+      model: "github_copilot/claude-sonnet-5.5"
+  - model_name: "claude-sonnet-5"
+    litellm_params:
+      model: "github_copilot/claude-sonnet-5.5"
 ...
