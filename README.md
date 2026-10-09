@@ -185,7 +185,7 @@ Every prompt is scanned by [Microsoft Presidio](https://github.com/microsoft/pre
 
 Presidio runs as two sidecar containers (`presidio-analyzer`, `presidio-anonymizer`) started by `docker compose up -d`.
 
-Masked entities (`litellm-config.yaml`, `guardrails:` block): `CREDIT_CARD`, `IBAN_CODE`, `EMAIL_ADDRESS`, `PHONE_NUMBER`, `IP_ADDRESS`, `US_SSN`.
+Masked entities (`litellm-config.yaml`, `guardrails:` block): `CREDIT_CARD`, `IBAN_CODE`, `EMAIL_ADDRESS`, `PHONE_NUMBER`, `US_SSN`. `IP_ADDRESS` is deliberately not masked: agents doing infrastructure work need the real address. Only prompts are scanned (`presidio_filter_scope: "input"`); model output is not.
 
 Verify it is live:
 

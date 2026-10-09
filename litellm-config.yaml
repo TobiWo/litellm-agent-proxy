@@ -12,6 +12,7 @@ litellm_settings:
     - "hooks.responses_tools.handler"
     - "hooks.mid_conversation_effort.handler"
     - "hooks.thinking_off.handler"
+    - "hooks.thinking_display.handler"
 general_settings:
   allow_requests_on_db_unavailable: true
 guardrails:
@@ -23,12 +24,17 @@ guardrails:
       # a per-request `guardrails: [...]` array, so without this the guard
       # loads but never runs.
       default_on: true
+      # Defaults to "both", which adds a post_call pass over model output.
+      # Prompts are already masked, and that pass cannot parse /v1/responses
+      # streams.
+      presidio_filter_scope: "input"
+      # No IP_ADDRESS: masking it breaks infrastructure work, where the model
+      # needs the real address.
       pii_entities_config:
         CREDIT_CARD: "MASK"
         IBAN_CODE: "MASK"
         EMAIL_ADDRESS: "MASK"
         PHONE_NUMBER: "MASK"
-        IP_ADDRESS: "MASK"
         US_SSN: "MASK"
       presidio_score_thresholds:
         ALL: 0.6
