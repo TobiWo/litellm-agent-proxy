@@ -37,11 +37,11 @@ def uses_per_message_effort(messages: Any) -> bool:
     )
 
 
-def with_beta(beta_header: str) -> str:
-    """Return the comma-separated ``beta_header`` with ``BETA`` included once."""
+def with_beta(beta_header: str, beta: str = BETA) -> str:
+    """Return the comma-separated ``beta_header`` with ``beta`` included once."""
     betas = [b.strip() for b in beta_header.split(BETA_SEPARATOR) if b.strip()]
-    if BETA not in betas:
-        betas.append(BETA)
+    if beta not in betas:
+        betas.append(beta)
     return BETA_SEPARATOR.join(betas)
 
 

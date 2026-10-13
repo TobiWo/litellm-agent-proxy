@@ -11,6 +11,7 @@ litellm_settings:
   callbacks:
     - "hooks.responses_tools.handler"
     - "hooks.mid_conversation_effort.handler"
+    - "hooks.extended_cache_ttl.handler"
     - "hooks.thinking_off.handler"
     - "hooks.thinking_display.handler"
 general_settings:
