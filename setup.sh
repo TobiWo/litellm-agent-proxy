@@ -304,6 +304,8 @@ if [ "$SETUP_CLAUDE" -eq 1 ]; then
 	detail "  CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1 — no non-essential traffic"
 	detail "  DISABLE_GROWTHBOOK=1                       — no feature-flag/analytics calls"
 	printf '\n'
+	detail "promptCacheTtl=1h keeps the main conversation cached for an hour (subagents: 5 min)."
+	printf '\n'
 
 	if [ ! -f "$CONFIGURE_CLAUDE_SCRIPT" ]; then
 		fail_line "$CONFIGURE_CLAUDE_SCRIPT is missing"
