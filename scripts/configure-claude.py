@@ -33,6 +33,12 @@ PRIVACY_ENV = {
     "CLAUDE_CODE_AUTO_MODE_SERVER": "0",
 }
 
+# One-hour prompt cache for the main conversation, so pauses of 5-60 minutes
+# don't re-read the whole conversation. Subagents keep Claude Code's 5-minute
+# default for gateways; they rarely outlive it.
+PROMPT_CACHE_TTL_KEY = "promptCacheTtl"
+PROMPT_CACHE_TTL = "1h"
+
 SECRET_KEYS = frozenset({AUTH_TOKEN_KEY})
 SECRET_PLACEHOLDER = "<hidden>"
 
@@ -169,9 +175,7 @@ def describe_changes(before: dict, after: dict) -> list[str]:
         elif key not in new_env:
             lines.append(f"{ENV_KEY}.{key}: {json.dumps(old)} -> (removed)")
         else:
-            lines.append(
-                f"{ENV_KEY}.{key}: {json.dumps(old)} -> {json.dumps(new)}"
-            )
+            lines.append(f"{ENV_KEY}.{key}: {json.dumps(old)} -> {json.dumps(new)}")
     return lines
 
 
@@ -263,6 +267,7 @@ def set_proxy(base_url: str, token: str):
         env[AUTH_TOKEN_KEY] = token
         env.update(PRIVACY_ENV)
         data[ENV_KEY] = env
+        data[PROMPT_CACHE_TTL_KEY] = PROMPT_CACHE_TTL
         return data
 
     return mutate
@@ -342,7 +347,10 @@ def main(argv: list[str] | None = None) -> int:
         )
 
     if args.max_context:
-        if not args.max_context.isdigit() or args.max_context.lstrip("0") != args.max_context:
+        if (
+            not args.max_context.isdigit()
+            or args.max_context.lstrip("0") != args.max_context
+        ):
             parser.error(
                 "use a positive integer token count (e.g. 272000), "
                 "without suffixes or leading zeros"
