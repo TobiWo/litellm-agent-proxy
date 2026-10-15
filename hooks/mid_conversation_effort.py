@@ -13,7 +13,7 @@ Loaded via ``litellm_settings.callbacks`` in ``litellm-config.yaml``.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 from litellm.integrations.custom_logger import CustomLogger
 
@@ -27,14 +27,17 @@ ROLE_KEY = "role"
 SYSTEM_ROLE = "system"
 
 
+def is_effort_message(message: object) -> bool:
+    """Whether ``message`` is a system message with its own ``output_config``."""
+    if not isinstance(message, dict):
+        return False
+    m = cast(dict[str, Any], message)
+    return m.get(ROLE_KEY) == SYSTEM_ROLE and OUTPUT_CONFIG_KEY in m
+
+
 def uses_per_message_effort(messages: Any) -> bool:
     """Whether any system message carries its own ``output_config``."""
-    return any(
-        isinstance(m, dict)
-        and m.get(ROLE_KEY) == SYSTEM_ROLE
-        and OUTPUT_CONFIG_KEY in m
-        for m in messages or []
-    )
+    return any(is_effort_message(m) for m in cast(list[object], messages or []))
 
 
 def with_beta(beta_header: str) -> str:
