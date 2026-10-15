@@ -131,6 +131,12 @@ model_list:
       supports_adaptive_thinking: true
     litellm_params:
       model: "github_copilot/claude-sonnet-5.5"
+  - model_name: "claude-haiku-5-5"
+    model_info:
+      supports_reasoning: true
+      supports_adaptive_thinking: true
+    litellm_params:
+      model: "github_copilot/claude-haiku-5.5"
   - model_name: "gpt-6-astra"
     model_info:
       mode: "responses"
@@ -146,13 +152,16 @@ model_list:
       mode: "responses"
     litellm_params:
       model: "github_copilot/gpt-6-luna"
-  # Not for direct use: Claude Code requests these internally (claude-sonnet-5
-  # is the auto mode classifier, Haiku the default for small/subagent calls).
-  # Copilot serves neither, so both map to Sonnet 5.5.
-  - model_name: "claude-haiku-4-5-20251001"
-    litellm_params:
-      model: "github_copilot/claude-sonnet-5.5"
+  # Not for direct use: Claude Code sends its auto mode classifier to
+  # claude-sonnet-5. Copilot no longer serves it; Haiku 5.5 is ~20x cheaper
+  # than Sonnet 5.5 for this input-heavy, ~10-token-output call.
+  # LiteLLM keys the thinking flags by backend model, not by alias, so they
+  # must match claude-haiku-5-5. The classifier still never thinks:
+  # hooks/thinking_off.py strips its thinking params by alias.
   - model_name: "claude-sonnet-5"
+    model_info:
+      supports_reasoning: true
+      supports_adaptive_thinking: true
     litellm_params:
-      model: "github_copilot/claude-sonnet-5.5"
+      model: "github_copilot/claude-haiku-5.5"
 ...
