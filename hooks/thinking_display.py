@@ -22,7 +22,7 @@ Loaded via ``litellm_settings.callbacks`` in ``litellm-config.yaml``.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, TypeGuard, cast
 
 from litellm.integrations.custom_logger import CustomLogger
 
@@ -33,13 +33,12 @@ SUMMARIZED = "summarized"
 ACCEPTED = {SUMMARIZED, "omitted"}
 
 
-def needs_rewrite(thinking: Any) -> bool:
+def needs_rewrite(thinking: object) -> TypeGuard[dict[str, Any]]:
     """Whether ``thinking`` carries a display Copilot rejects."""
-    return (
-        isinstance(thinking, dict)
-        and DISPLAY_KEY in thinking
-        and thinking[DISPLAY_KEY] not in ACCEPTED
-    )
+    if not isinstance(thinking, dict):
+        return False
+    t = cast(dict[str, Any], thinking)
+    return DISPLAY_KEY in t and t[DISPLAY_KEY] not in ACCEPTED
 
 
 class ThinkingDisplayHandler(CustomLogger):
