@@ -295,7 +295,7 @@ A row from the secret filter looks like:
 
 **Beta header rejections (`400`):** If Claude Code fails with `Unexpected value(s) for the anthropic-beta header` or `Extra inputs are not permitted`, set `CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS=1` in your shell and restart Claude Code.
 
-**Auto mode classifier:** Claude Code's [no-charge server-side auto mode checks](https://code.claude.com/docs/en/auto-mode-classifier-billing) require the Anthropic API; GitHub Copilot doesn't support them. Classifier requests are sent as regular requests and count against your Copilot quota. Setup sets `CLAUDE_CODE_AUTO_MODE_SERVER=0` so Claude Code doesn't stop to show the "session isn't eligible" notice.
+**Auto mode classifier:** Claude Code's [no-charge server-side auto mode checks](https://code.claude.com/docs/en/auto-mode-classifier-billing) require the Anthropic API; GitHub Copilot doesn't support them. Classifier requests are sent as regular requests and count against your Copilot quota. Setup sets `CLAUDE_CODE_AUTO_MODE_SERVER=0` so Claude Code doesn't stop to show the "session isn't eligible" notice. The classifier model, `claude-sonnet-5`, is aliased to Haiku 5.5 to save cost; point it at `github_copilot/claude-sonnet-5.5` in `litellm-config.yaml` if you want the stricter Sonnet judgement back.
 
 ### Codex limitations
 
