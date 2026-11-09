@@ -2,7 +2,7 @@
 services:
   litellm:
     container_name: "litellm-agent-proxy"
-    image: "ghcr.io/berriai/litellm:v1.101.4"
+    image: "ghcr.io/berriai/litellm:v1.105.7"
     command:
       - "--config"
       - "/app/config.yaml"
@@ -31,9 +31,9 @@ services:
 
   presidio-analyzer:
     container_name: "litellm-agent-proxy-presidio-analyzer"
-    image: "ghcr.io/data-privacy-stack/presidio-analyzer:2.2.364"
+    image: "ghcr.io/data-privacy-stack/presidio-analyzer:2.2.366"
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost:3000/health || exit 1"]
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.build_opener(u.ProxyHandler({})).open('http://localhost:3000/health', timeout=4)"]
       interval: "10s"
       timeout: "5s"
       retries: 12
@@ -44,9 +44,9 @@ services:
 
   presidio-anonymizer:
     container_name: "litellm-agent-proxy-presidio-anonymizer"
-    image: "ghcr.io/data-privacy-stack/presidio-anonymizer:2.2.364"
+    image: "ghcr.io/data-privacy-stack/presidio-anonymizer:2.2.366"
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost:3000/health || exit 1"]
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.build_opener(u.ProxyHandler({})).open('http://localhost:3000/health', timeout=4)"]
       interval: "10s"
       timeout: "5s"
       retries: 12
