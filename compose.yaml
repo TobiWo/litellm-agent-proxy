@@ -2,7 +2,7 @@
 services:
   litellm:
     container_name: "litellm-agent-proxy"
-    image: "ghcr.io/berriai/litellm:v1.105.7"
+    image: "ghcr.io/berriai/litellm:v1.105.7@sha256:64042b24fbb1caf6da0b8a44b89de54f25ea5ae679e499ab8882748031faa2c2"
     command:
       - "--config"
       - "/app/config.yaml"
@@ -31,7 +31,7 @@ services:
 
   presidio-analyzer:
     container_name: "litellm-agent-proxy-presidio-analyzer"
-    image: "ghcr.io/data-privacy-stack/presidio-analyzer:2.2.366"
+    image: "ghcr.io/data-privacy-stack/presidio-analyzer:2.2.366@sha256:036d2f9b3c274fb36497383acef8f2d5aea528a014801c2c3040fb067990c79c"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request as u; u.build_opener(u.ProxyHandler({})).open('http://localhost:3000/health', timeout=4)"]
       interval: "10s"
@@ -44,7 +44,7 @@ services:
 
   presidio-anonymizer:
     container_name: "litellm-agent-proxy-presidio-anonymizer"
-    image: "ghcr.io/data-privacy-stack/presidio-anonymizer:2.2.366"
+    image: "ghcr.io/data-privacy-stack/presidio-anonymizer:2.2.366@sha256:b4d9ec900135c694b84353e03e1abd5127ccdfcd916d32db73002c28f0eaddc7"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request as u; u.build_opener(u.ProxyHandler({})).open('http://localhost:3000/health', timeout=4)"]
       interval: "10s"
@@ -57,7 +57,7 @@ services:
 
   db:
     container_name: "litellm-agent-proxy-db"
-    image: "postgres:18-alpine"
+    image: "postgres:18.7-alpine3.24@sha256:75dcac3dfb1cd01ca3536910bbc84128759362f8b118bf8c55b38a94f68f3b73"
     environment:
       POSTGRES_USER: "${POSTGRES_USER:-litellm}"
       POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-litellm}"
